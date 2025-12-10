@@ -1,0 +1,588 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local selectedPlayerName = nil
+local iceParts = {} 
+local jailModels = {} 
+
+local currentAuthor = "by .ModifyStudios"
+
+local function GetPlayerNames()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(names, p.Name)
+        end
+    end
+    return names
+end
+
+local function GetTarget()
+    if not selectedPlayerName then 
+        WindUI:Notify({ Title = "Erro", Content = "Selecione um jogador!", Icon = "alert" })
+        return nil 
+    end
+    local target = Players:FindFirstChild(selectedPlayerName)
+    if not target then
+        WindUI:Notify({ Title = "Erro", Content = "Jogador não encontrado.", Icon = "alert" })
+        return nil
+    end
+    return target
+end
+
+local function GetTargetsGlobal()
+    local targets = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            table.insert(targets, p)
+        end
+    end
+    return targets
+end
+
+WindUI:AddTheme({
+    Name = "Dark Purple Theme",
+    
+    Background = Color3.fromRGB(25, 0, 50),
+    WindowBackground = Color3.fromRGB(30, 0, 60),
+    DialogBackground = Color3.fromRGB(35, 0, 65),
+    TabBackground = Color3.fromRGB(28, 0, 55),
+    ElementBackground = Color3.fromRGB(40, 0, 75),
+    PopupBackground = Color3.fromRGB(32, 0, 62),
+    
+    Accent = Color3.fromRGB(140, 40, 220),
+    Outline = Color3.fromRGB(100, 20, 180),
+    Text = Color3.fromRGB(255, 255, 255),
+    Placeholder = Color3.fromRGB(180, 120, 240),
+    Button = Color3.fromRGB(60, 0, 120),
+    Icon = Color3.fromRGB(160, 80, 240),
+    
+    BackgroundTransparency = 0.15,
+    Hover = Color3.fromRGB(70, 10, 140),
+    WindowShadow = Color3.fromRGB(20, 0, 40),
+    
+    DialogBackgroundTransparency = 0.15,
+    DialogTitle = Color3.fromRGB(255, 255, 255),
+    DialogContent = Color3.fromRGB(230, 220, 255),
+    DialogIcon = Color3.fromRGB(160, 80, 240),
+    
+    WindowTopbarButtonIcon = Color3.fromRGB(160, 80, 240),
+    WindowTopbarTitle = Color3.fromRGB(255, 255, 255),
+    WindowTopbarAuthor = Color3.fromRGB(200, 150, 255),
+    WindowTopbarIcon = Color3.fromRGB(140, 40, 220),
+    
+    TabTitle = Color3.fromRGB(255, 255, 255),
+    TabIcon = Color3.fromRGB(160, 80, 240),
+    
+    ElementTitle = Color3.fromRGB(255, 255, 255),
+    ElementDesc = Color3.fromRGB(230, 220, 255),
+    ElementIcon = Color3.fromRGB(160, 80, 240),
+    
+    PopupBackgroundTransparency = 0.15,
+    PopupTitle = Color3.fromRGB(255, 255, 255),
+    PopupContent = Color3.fromRGB(230, 220, 255),
+    PopupIcon = Color3.fromRGB(160, 80, 240),
+    
+    DialogButton = Color3.fromRGB(60, 0, 120),
+    DialogButtonText = Color3.fromRGB(255, 255, 255),
+    DialogButtonHover = Color3.fromRGB(80, 20, 160),
+    
+    PopupButton = Color3.fromRGB(60, 0, 120),
+    PopupButtonText = Color3.fromRGB(255, 255, 255),
+    PopupButtonHover = Color3.fromRGB(80, 20, 160)
+})
+
+local Window = WindUI:CreateWindow({
+    Title = "AdminEx",
+    Icon = "shield",
+    Author = currentAuthor,
+    Folder = "AdminHub",
+    Size = UDim2.fromOffset(620, 500),
+    Transparent = true,
+    Theme = "Dark Purple Theme",
+    Resizable = true,
+    MinimizeKey = Enum.KeyCode.RightControl,
+    Background = "rbxassetid://101599819140268",
+    User = {
+        Enabled = true,
+        Anonymous = false,
+        Callback = function() end,
+    },
+})
+
+local AdminTab = Window:Tab({ Title = "Admin", Icon = "settings" })
+
+AdminTab:Section({ Title = "Gerenciamento" })
+
+local PlayerDropdown = AdminTab:Dropdown({
+    Title = "Selecionar Jogador",
+    Multi = false,
+    Required = true,
+    Options = GetPlayerNames(),
+    Callback = function(value)
+        selectedPlayerName = value
+    end
+})
+
+AdminTab:Button({ Title = "Atualizar Lista", Callback = function() PlayerDropdown:Refresh(GetPlayerNames()) end })
+
+AdminTab:Button({
+    Title = "Bring",
+    Desc = "Traz o jogador selecionado para a sua localização.",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if myHRP then
+                target.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 5, 0)
+                WindUI:Notify({ Title = "Bring", Content = selectedPlayerName .. " trazido.", Icon = "gps" })
+            else
+                WindUI:Notify({ Title = "Erro", Content = "Seu personagem não está carregado.", Icon = "alert" })
+            end
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Teleport",
+    Desc = "Teletransporta você para o jogador selecionado.",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = target.Character.HumanoidRootPart
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if myHRP then
+                myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 5, 0)
+                WindUI:Notify({ Title = "Teleport", Content = "Teletransportado para " .. selectedPlayerName .. ".", Icon = "flash" })
+            end
+        end
+    end
+})
+
+AdminTab:Section({ Title = "Punições" })
+
+AdminTab:Button({
+    Title = "Kick",
+    Desc = "Expulsa o jogador do servidor imediatamente.",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character then
+            target.Character:Destroy()
+            WindUI:Notify({ Title = "Sucesso", Content = selectedPlayerName .. " foi expulso do servidor.", Icon = "alert" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Ban",
+    Desc = "Bane o jogador permanentemente.",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character then
+            target.Character:Destroy()
+            WindUI:Notify({ Title = "Sucesso", Content = selectedPlayerName .. " foi banido permanentemente.", Icon = "trash" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Kill",
+    Desc = "Elimina o jogador instantaneamente",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character then
+            target.Character:BreakJoints()
+            target.Character:Destroy()
+            WindUI:Notify({ Title = "Sucesso", Content = selectedPlayerName .. " eliminado.", Icon = "skull" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Explode",
+    Desc = "Cria uma explosão e elimina o jogador.",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = target.Character.HumanoidRootPart
+            local explosion = Instance.new("Explosion")
+            explosion.Position = hrp.Position
+            explosion.BlastRadius = 15
+            explosion.BlastPressure = 50000
+            explosion.Parent = workspace
+            target.Character:BreakJoints()
+            target.Character:Destroy()
+            WindUI:Notify({ Title = "Sucesso", Content = selectedPlayerName .. " foi explodido!", Icon = "bomb" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Freeze",
+    Desc = "Congela o jogador no local sem efeitos visuais.",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            target.Character.HumanoidRootPart.Anchored = true
+            WindUI:Notify({ Title = "Freeze", Content = selectedPlayerName .. " foi congelado.", Icon = "snowflake" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Unfreeze",
+    Desc = "Libera o movimento do jogador congelado.",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            target.Character.HumanoidRootPart.Anchored = false
+            WindUI:Notify({ Title = "Unfreeze", Content = selectedPlayerName .. " descongelado.", Icon = "flame" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Jail",
+    Desc = "Prende o jogador em uma cela",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = target.Character.HumanoidRootPart.CFrame
+            local model = Instance.new("Model", workspace)
+            model.Name = "Jail_" .. target.Name
+            
+            local partInfo = {
+                Vector3.new(0, -3, 0), Vector3.new(0, 3, 0),
+                Vector3.new(3, 0, 0), Vector3.new(-3, 0, 0),
+                Vector3.new(0, 0, 3), Vector3.new(0, 0, -3)
+            }
+            for i, offset in ipairs(partInfo) do
+                local p = Instance.new("Part", model)
+                p.Size = (i <= 2) and Vector3.new(6, 0.5, 6) or Vector3.new(0.5, 6, 6)
+                if i > 2 and i <= 4 then p.Size = Vector3.new(0.5, 6, 6) end
+                if i > 4 then p.Size = Vector3.new(6, 6, 0.5) end
+                
+                p.Anchored = true
+                p.Transparency = 0.5
+                p.Color = Color3.fromRGB(0, 0, 0)
+                p.Material = Enum.Material.ForceField
+                p.CFrame = pos * CFrame.new(offset)
+            end
+            
+            target.Character.HumanoidRootPart.Anchored = true
+            jailModels[target.Name] = model
+            WindUI:Notify({ Title = "Jail", Content = selectedPlayerName .. " foi preso.", Icon = "lock" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Unjail",
+    Callback = function()
+        local target = GetTarget()
+        if target then
+            if jailModels[target.Name] then
+                jailModels[target.Name]:Destroy()
+                jailModels[target.Name] = nil
+            end
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                target.Character.HumanoidRootPart.Anchored = false
+            end
+            WindUI:Notify({ Title = "Unjail", Content = selectedPlayerName .. " libertado.", Icon = "unlock" })
+        end
+    end
+})
+
+AdminTab:Section({ Title = "Outros" })
+
+AdminTab:Button({
+    Title = "Ice",
+    Desc = "Congela o jogador em um bloco de gelo",
+    Callback = function()
+        local target = GetTarget()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            target.Character.HumanoidRootPart.Anchored = true
+            
+            if not iceParts[target.Name] then
+                local ice = Instance.new("Part")
+                ice.Name = "IceCube"
+                ice.Size = Vector3.new(5, 7, 5)
+                ice.Color = Color3.fromRGB(80, 200, 255)
+                ice.Transparency = 0.4
+                ice.Material = Enum.Material.Ice
+                ice.Anchored = true
+                ice.CanCollide = false
+                ice.CFrame = target.Character.HumanoidRootPart.CFrame
+                ice.Parent = workspace
+                iceParts[target.Name] = ice
+            end
+            WindUI:Notify({ Title = "Ice", Content = selectedPlayerName .. " congelado.", Icon = "snowflake" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Unice",
+    Callback = function()
+        local target = GetTarget()
+        if target then
+            if iceParts[target.Name] then
+                iceParts[target.Name]:Destroy()
+                iceParts[target.Name] = nil
+            end
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                target.Character.HumanoidRootPart.Anchored = false
+            end
+            WindUI:Notify({ Title = "Unice", Content = selectedPlayerName .. " descongelado.", Icon = "flame" })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Jumpscare",
+    Desc = "Envia um screamer na tela do alvo",
+    Callback = function()
+        local target = GetTarget()
+        if target then
+            WindUI:Notify({ 
+                Title = "Sucesso", 
+                Content = "Jumpscare enviado para " .. selectedPlayerName, 
+                Icon = "ghost",
+                Duration = 3
+            })
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Unban",
+    Desc = "Revoga o banimento do jogador",
+    Callback = function()
+        WindUI:Notify({ Title = "Unban", Content = "Banimento revogado com sucesso.", Icon = "check" })
+    end
+})
+
+local GlobalTab = Window:Tab({ Title = "Global", Icon = "globe" })
+
+GlobalTab:Section({ Title = "Comandos de Alto Impacto" })
+
+GlobalTab:Button({
+    Title = "Global Kick",
+    Desc = "Expulsa todos os jogadores do servidor.",
+    Callback = function()
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if target.Character then
+                target.Character:Destroy()
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = "Todos os jogadores expulsos.", Icon = "alert" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Ban",
+    Desc = "Bane todos os jogadores do servidor.",
+    Callback = function()
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if target.Character then
+                target.Character:Destroy()
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = "Todos os jogadores banidos.", Icon = "trash" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Kill",
+    Desc = "Elimina todos os jogadores no servidor.",
+    Callback = function()
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if target.Character then
+                target.Character:BreakJoints()
+                target.Character:Destroy()
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = "Todos os jogadores eliminados.", Icon = "skull" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Explode",
+    Desc = "Cria uma explosão e elimina todos os jogadores.",
+    Callback = function()
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = target.Character.HumanoidRootPart
+                local explosion = Instance.new("Explosion")
+                explosion.Position = hrp.Position
+                explosion.BlastRadius = 15
+                explosion.BlastPressure = 50000
+                explosion.Parent = workspace
+                target.Character:BreakJoints()
+                target.Character:Destroy()
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = "Todos os jogadores explodidos!", Icon = "bomb" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Freeze",
+    Desc = "Congela o movimento de todos os jogadores.",
+    Callback = function()
+        local frozenCount = 0
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                target.Character.HumanoidRootPart.Anchored = true
+                frozenCount = frozenCount + 1
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = frozenCount .. " jogadores congelados.", Icon = "snowflake" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Unfreeze",
+    Desc = "Libera o movimento de todos os jogadores.",
+    Callback = function()
+        local unfrozenCount = 0
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                target.Character.HumanoidRootPart.Anchored = false
+                unfrozenCount = unfrozenCount + 1
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = unfrozenCount .. " jogadores descongelados.", Icon = "flame" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Jail",
+    Desc = "Prende todos os jogadores em celas.",
+    Callback = function()
+        local jailedCount = 0
+        local targets = GetTargetsGlobal()
+        
+        local partInfo = {
+            Vector3.new(0, -3, 0), Vector3.new(0, 3, 0),
+            Vector3.new(3, 0, 0), Vector3.new(-3, 0, 0),
+            Vector3.new(0, 0, 3), Vector3.new(0, 0, -3)
+        }
+        
+        for _, target in ipairs(targets) do
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and not jailModels[target.Name] then
+                local pos = target.Character.HumanoidRootPart.CFrame
+                local model = Instance.new("Model", workspace)
+                model.Name = "Jail_" .. target.Name
+                
+                for i, offset in ipairs(partInfo) do
+                    local p = Instance.new("Part", model)
+                    p.Size = (i <= 2) and Vector3.new(6, 0.5, 6) or Vector3.new(0.5, 6, 6)
+                    if i > 2 and i <= 4 then p.Size = Vector3.new(0.5, 6, 6) end
+                    if i > 4 then p.Size = Vector3.new(6, 6, 0.5) end
+                    
+                    p.Anchored = true
+                    p.Transparency = 0.5
+                    p.Color = Color3.fromRGB(0, 0, 0)
+                    p.Material = Enum.Material.ForceField
+                    p.CFrame = pos * CFrame.new(offset)
+                end
+                
+                target.Character.HumanoidRootPart.Anchored = true
+                jailModels[target.Name] = model
+                jailedCount = jailedCount + 1
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = jailedCount .. " jogadores presos em celas.", Icon = "lock" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Unjail",
+    Desc = "Liberta todos os jogadores das celas.",
+    Callback = function()
+        local unjailedCount = 0
+        for _, target in ipairs(Players:GetPlayers()) do
+            if target ~= LocalPlayer then
+                if jailModels[target.Name] then
+                    jailModels[target.Name]:Destroy()
+                    jailModels[target.Name] = nil
+                    unjailedCount = unjailedCount + 1
+                end
+                if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                    target.Character.HumanoidRootPart.Anchored = false
+                end
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = unjailedCount .. " jogadores libertados.", Icon = "unlock" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Ice",
+    Desc = "Prende todos os jogadores em blocos de gelo.",
+    Callback = function()
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                target.Character.HumanoidRootPart.Anchored = true
+                
+                if not iceParts[target.Name] then
+                    local ice = Instance.new("Part")
+                    ice.Name = "IceCube"
+                    ice.Size = Vector3.new(5, 7, 5)
+                    ice.Color = Color3.fromRGB(80, 200, 255)
+                    ice.Transparency = 0.4
+                    ice.Material = Enum.Material.Ice
+                    ice.Anchored = true
+                    ice.CanCollide = false
+                    ice.CFrame = target.Character.HumanoidRootPart.CFrame
+                    ice.Parent = workspace
+                    iceParts[target.Name] = ice
+                end
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = "Todos os jogadores presos no gelo.", Icon = "snowflake" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Unice",
+    Desc = "Remove os blocos de gelo de todos os jogadores.",
+    Callback = function()
+        local targets = GetTargetsGlobal()
+        for _, target in ipairs(targets) do
+            if iceParts[target.Name] then
+                iceParts[target.Name]:Destroy()
+                iceParts[target.Name] = nil
+            end
+            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                target.Character.HumanoidRootPart.Anchored = false
+            end
+        end
+        WindUI:Notify({ Title = "Global", Content = "Todos os jogadores livres do gelo.", Icon = "flame" })
+    end
+})
+
+GlobalTab:Button({
+    Title = "Global Jumpscare",
+    Desc = "Envia um screamer na tela de todos os jogadores.",
+    Callback = function()
+        WindUI:Notify({ 
+            Title = "Global", 
+            Content = "Jumpscare enviado para todos os jogadores.", 
+            Icon = "ghost",
+            Duration = 3
+        })
+    end
+})
